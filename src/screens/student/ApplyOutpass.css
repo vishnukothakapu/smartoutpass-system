@@ -1,0 +1,51 @@
+.apply-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeIn 0.3s ease;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+.apply-form-card {
+  padding: 24px;
+}
+
+.date-row {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 480px) {
+  .date-row {
+    flex-direction: row;
+    gap: 16px;
+  }
+  .date-row > * {
+    flex: 1;
+  }
+}
+
+.success-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.success-icon-wrapper {
+  color: var(--success);
+  animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes scaleIn {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}

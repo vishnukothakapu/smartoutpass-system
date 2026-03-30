@@ -1,0 +1,83 @@
+.security-scanner {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.scanner-header {
+  margin-bottom: 8px;
+  padding-top: 8px;
+}
+
+.scanner-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+}
+
+.camera-frame {
+  width: 200px;
+  height: 200px;
+  border: 4px dashed var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface-hover);
+  transition: var(--transition);
+}
+
+.camera-icon {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.scanning-animation {
+  border-color: var(--primary);
+  border-style: solid;
+}
+
+.scanning-animation .camera-icon {
+  color: var(--primary);
+  opacity: 1;
+}
+
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+  animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+  0% { top: -10%; }
+  50% { top: 110%; }
+  100% { top: -10%; }
+}
+
+.error-card {
+  border: 2px solid var(--danger);
+  background-color: var(--danger-bg);
+}
+
+.success-card {
+  border: 2px solid var(--success);
+}
+
+.scanned-student-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  background-color: var(--bg);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}

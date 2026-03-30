@@ -1,0 +1,115 @@
+.status-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.status-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.qr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--surface);
+  border: 2px solid var(--success);
+}
+
+.qr-wrapper {
+  background: white; /* QR codes must have light background for scanning */
+  padding: 16px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+.scan-instruction {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  background-color: var(--success-bg);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+}
+
+.pending-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+}
+
+.details-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.duration-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+
+.vertical-line {
+  width: 2px;
+  height: 16px;
+  background-color: var(--border);
+  margin-left: 17px;
+}
+
+.emergency-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.emergency-btn {
+  color: var(--danger);
+}
+
+.emergency-btn:hover {
+  background-color: var(--danger-bg);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 400px;
+  animation: slideUp 0.3s ease forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
