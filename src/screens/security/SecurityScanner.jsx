@@ -4,12 +4,14 @@ import { useApp } from '../../App';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { ScanFace, CheckCircle, XCircle, LogIn, LogOut, FileText } from 'lucide-react';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import './SecurityScanner.css';
 
 export const SecurityScanner = () => {
   const { user, outpasses, updateOutpassStatus, addLog, logs } = useApp();
   const navigate = useNavigate();
   const [scanning, setScanning] = useState(false);
+  const [liveScanning, setLiveScanning] = useState(false);
   const [scannedResult, setScannedResult] = useState(null); // success, error, or null
   const [scannedOutpass, setScannedOutpass] = useState(null);
   
@@ -31,6 +33,26 @@ export const SecurityScanner = () => {
         setScannedResult('error');
       }
     }, 2000);
+  };
+
+  const handleActualScan = (text) => {
+    try {
+      const data = JSON.parse(text);
+      const outpassId = data.id;
+      const validOutpass = outpasses.find(o => o.id === outpassId);
+      
+      if (validOutpass && (validOutpass.status === 'approved' || validOutpass.status === 'active')) {
+        setScannedOutpass(validOutpass);
+        setScannedResult('success');
+        setLiveScanning(false);
+      } else {
+        setScannedResult('error');
+        setLiveScanning(false);
+      }
+    } catch (err) {
+      setScannedResult('error');
+      setLiveScanning(false);
+    }
   };
 
   const processGateAction = (type) => {
@@ -83,26 +105,44 @@ export const SecurityScanner = () => {
 
       {!scannedResult ? (
         <Card className="scanner-card">
-          <div className={`camera-frame ${scanning ? 'scanning-animation' : ''}`}>
-             <ScanFace size={64} className="camera-icon" />
-             {scanning && <div className="scan-line"></div>}
-          </div>
-          
-          <h3 className="text-h3 text-center" style={{marginTop: 24, marginBottom: 8}}>
-            {scanning ? 'Scanning QR Code...' : 'Ready to Scan'}
-          </h3>
-          <p className="text-muted text-sm text-center" style={{marginBottom: 32}}>
-            {scanning ? 'Hold device steady over student QR code.' : 'Tap below to simulate scanning a valid outpass QR.'}
-          </p>
+          {liveScanning ? (
+            <div style={{ width: '100%', borderRadius: 12, overflow: 'hidden', marginBottom: 24, alignSelf: 'center' }}>
+              <Scanner
+                onScan={(result) => {
+                  if (result && result.length > 0) {
+                    handleActualScan(result[0].rawValue);
+                  }
+                }}
+                onError={(error) => console.log(error?.message)}
+              />
+            </div>
+          ) : (
+            <>
+              <div className={`camera-frame ${scanning ? 'scanning-animation' : ''}`}>
+                 <ScanFace size={64} className="camera-icon" />
+                 {scanning && <div className="scan-line"></div>}
+              </div>
+              
+              <h3 className="text-h3 text-center" style={{marginTop: 24, marginBottom: 8}}>
+                {scanning ? 'Scanning...' : 'Ready to Scan'}
+              </h3>
+              <p className="text-muted text-sm text-center" style={{marginBottom: 32}}>
+                Tap 'Scan the Outpass' to scan a live student QR pass.
+              </p>
+            </>
+          )}
 
-          <Button 
-            fullWidth 
-            size="lg" 
-            onClick={simulateScan} 
-            isLoading={scanning}
-          >
-            Simulate Scan
-          </Button>
+          <div style={{display: 'flex', gap: 12, width: '100%'}}>
+            {!liveScanning ? (
+              <Button fullWidth size="lg" onClick={() => setLiveScanning(true)}>
+                Scan the Outpass
+              </Button>
+            ) : (
+              <Button fullWidth size="lg" variant="secondary" onClick={() => setLiveScanning(false)}>
+                Cancel Camera
+              </Button>
+            )}
+          </div>
         </Card>
       ) : scannedResult === 'error' ? (
         <Card className="scanner-card error-card">

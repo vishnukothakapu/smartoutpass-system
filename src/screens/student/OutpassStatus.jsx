@@ -41,6 +41,12 @@ export const OutpassStatus = () => {
     }, 1500);
   };
 
+  const qrValue = JSON.stringify({
+    id: outpass.id,
+    student: outpass.studentId,
+    timestamp: new Date().toISOString()
+  });
+
   return (
     <div className="status-container">
       <div className="header-row">
@@ -60,10 +66,10 @@ export const OutpassStatus = () => {
         {(outpass.status === 'completed') && <Badge variant="info">Completed</Badge>}
       </div>
 
-      {isApproved && outpass.qrData && (
+      {isApproved && (
         <Card className="qr-card">
           <div className="qr-wrapper">
-            <QRCodeSVG value={outpass.qrData} size={200} level="H" includeMargin={true} />
+            <QRCodeSVG value={qrValue} size={200} level="H" includeMargin={true} />
           </div>
           <p className="text-muted text-center text-sm" style={{marginTop: 16}}>
             Show this QR code at the main gate scanner.
