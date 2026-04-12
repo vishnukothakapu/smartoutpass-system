@@ -88,6 +88,17 @@ router.post('/', authorize('student'), async (req, res) => {
   }
 
   try {
+    const existingOutpass = await Outpass.findOne({
+      studentId: req.user._id,
+      status: { $in: ['pending', 'approved', 'active'] }
+    });
+
+    if (existingOutpass) {
+      return res.status(400).json({ 
+        message: 'You already have an ongoing outpass. You cannot apply for a new one until it is completed or rejected.' 
+      });
+    }
+
     const outpass = await Outpass.create({
       studentId: req.user._id,
       studentName: req.user.name,

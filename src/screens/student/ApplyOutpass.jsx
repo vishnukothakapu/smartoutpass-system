@@ -4,14 +4,16 @@ import { useApp } from '../../App';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
 export const ApplyOutpass = () => {
-  const { user, addOutpass } = useApp();
+  const { user, addOutpass, outpasses } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  
+  const hasActiveOutpass = outpasses.some(o => ['pending', 'approved', 'active'].includes(o.status));
   const minDateTime = new Date().toISOString().slice(0, 16);
   const [formData, setFormData] = useState({ reasonStr: '', destination: '', items: '', dateOut: '', dateIn: '' });
 
@@ -50,6 +52,21 @@ export const ApplyOutpass = () => {
       <p className="text-slate-500 dark:text-slate-400 text-center text-sm max-w-xs">
         Your outpass request has been sent to the warden for approval.
       </p>
+    </div>
+  );
+
+  if (hasActiveOutpass) return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center gap-4 animate-fade-slide-up px-4">
+      <div className="w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+        <XCircle size={44} className="text-red-500" />
+      </div>
+      <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white text-center">Action Blocked</h2>
+      <p className="text-slate-500 dark:text-slate-400 text-center text-sm max-w-sm">
+        You already have an ongoing outpass. You cannot apply for a new one until your current outpass is completed or rejected.
+      </p>
+      <Button onClick={() => navigate(-1)} variant="secondary" className="mt-4">
+        Go Back
+      </Button>
     </div>
   );
 
