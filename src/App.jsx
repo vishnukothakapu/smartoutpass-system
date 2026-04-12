@@ -39,36 +39,45 @@ export const AppProvider = ({ children }) => {
   const [loadingLogs, setLoadingLogs] = useState(false);
 
   // ─── Fetch outpasses when user logs in ────────────────────────────────────
-  const fetchOutpasses = useCallback(async () => {
+  const fetchOutpasses = useCallback(async (silent = false) => {
     if (!user) return;
-    setLoadingOutpasses(true);
+    if (!silent) setLoadingOutpasses(true);
     try {
       const data = await getOutpasses();
       setOutpasses(data);
     } catch (err) {
       console.error('Failed to fetch outpasses:', err);
     } finally {
-      setLoadingOutpasses(false);
+      if (!silent) setLoadingOutpasses(false);
     }
   }, [user]);
 
   // ─── Fetch logs (security/warden only) ────────────────────────────────────
-  const fetchLogs = useCallback(async () => {
+  const fetchLogs = useCallback(async (silent = false) => {
     if (!user || user.role === 'student') return;
-    setLoadingLogs(true);
+    if (!silent) setLoadingLogs(true);
     try {
       const data = await getLogs();
       setLogs(data);
     } catch (err) {
       console.error('Failed to fetch logs:', err);
     } finally {
-      setLoadingLogs(false);
+      if (!silent) setLoadingLogs(false);
     }
   }, [user]);
 
   useEffect(() => {
+    // Initial fetch on mount
     fetchOutpasses();
     fetchLogs();
+
+    // Auto-refresh data silently every 10 seconds
+    const interval = setInterval(() => {
+      fetchOutpasses(true);
+      fetchLogs(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [fetchOutpasses, fetchLogs]);
 
   // ─── Auth Actions ─────────────────────────────────────────────────────────
