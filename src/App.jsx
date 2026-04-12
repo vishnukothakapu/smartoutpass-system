@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Header } from './components/layout/Header';
 import { LoginScreen } from './screens/LoginScreen';
 import { StudentDashboard } from './screens/student/StudentDashboard';
@@ -9,68 +10,143 @@ import { WardenDashboard } from './screens/warden/WardenDashboard';
 import { WardenApproval } from './screens/warden/WardenApproval';
 import { SecurityScanner } from './screens/security/SecurityScanner';
 import { SecurityLog } from './screens/security/SecurityLog';
-import { mockUsers, initialOutpasses, mockLogs } from './data/mockData';
+import { loginApi, googleLoginApi } from './api/auth';
+import { updateProfile as updateProfileApi } from './api/profile';
+import {
+  getOutpasses,
+  createOutpass as createOutpassApi,
+  updateOutpassStatus as updateOutpassStatusApi,
+} from './api/outpasses';
+import { getLogs, addLog as addLogApi } from './api/logs';
 
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // Set to null default
-  const [outpasses, setOutpasses] = useState(initialOutpasses);
-  const [logs, setLogs] = useState(mockLogs);
-
-  const login = (role, email) => {
-    const baseUser = { ...mockUsers[role] };
-    
-    if (role === 'student' && email) {
-      // Parse email e.g., "bcs_2023028@iiitm.ac.in"
-      const prefix = email.split('@')[0]; // "bcs_2023028"
-      const parts = prefix.split('_'); // ["bcs", "2023028"]
-      
-      if (parts.length >= 2) {
-        baseUser.program = parts[0].toUpperCase();
-        baseUser.batch = parts[1].substring(0, 4); // Extract "2023" from "2023028"
-      }
+  // ─── Auth State ────────────────────────────────────────────────────────────
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
     }
-    
-    setUser(baseUser);
+  });
+
+  // ─── Data State ────────────────────────────────────────────────────────────
+  const [outpasses, setOutpasses] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [loadingOutpasses, setLoadingOutpasses] = useState(false);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  // ─── Fetch outpasses when user logs in ────────────────────────────────────
+  const fetchOutpasses = useCallback(async () => {
+    if (!user) return;
+    setLoadingOutpasses(true);
+    try {
+      const data = await getOutpasses();
+      setOutpasses(data);
+    } catch (err) {
+      console.error('Failed to fetch outpasses:', err);
+    } finally {
+      setLoadingOutpasses(false);
+    }
+  }, [user]);
+
+  // ─── Fetch logs (security/warden only) ────────────────────────────────────
+  const fetchLogs = useCallback(async () => {
+    if (!user || user.role === 'student') return;
+    setLoadingLogs(true);
+    try {
+      const data = await getLogs();
+      setLogs(data);
+    } catch (err) {
+      console.error('Failed to fetch logs:', err);
+    } finally {
+      setLoadingLogs(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchOutpasses();
+    fetchLogs();
+  }, [fetchOutpasses, fetchLogs]);
+
+  // ─── Auth Actions ─────────────────────────────────────────────────────────
+  const login = async (role, email, password) => {
+    const { token, user: userData } = await loginApi(role, email, password);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    return userData;
   };
 
-  const logout = () => setUser(null);
-
-  const addOutpass = (data) => {
-    const newOutpass = {
-      ...data,
-      id: `OUT-${Math.floor(Math.random() * 10000)}`,
-      studentId: user.id,
-      studentName: user.name,
-      studentProgram: user.program,
-      studentBatch: user.batch,
-      status: 'pending',
-      appliedAt: new Date().toISOString()
-    };
-    setOutpasses([newOutpass, ...outpasses]);
-    return newOutpass.id;
+  const googleLogin = async (credential) => {
+    const { token, user: userData } = await googleLoginApi(credential);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    return userData;
   };
 
-  const updateOutpassStatus = (id, status) => {
-    setOutpasses(prev => prev.map(o => {
-      if(o.id === id) {
-        return { 
-          ...o, 
-          status, 
-          qrData: status === 'approved' ? btoa(JSON.stringify({id: o.id})) : null 
-        };
-      }
-      return o;
-    }));
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setOutpasses([]);
+    setLogs([]);
   };
 
-  const addLog = (outpass, type) => {
-    setLogs([{ id: Date.now(), outpassId: outpass.id, type, timestamp: new Date().toISOString(), studentName: outpass.studentName }, ...logs]);
+  // ─── Profile Update ─────────────────────────────────────────────────────
+  const updateProfile = (updatedUser) => {
+    const merged = { ...user, ...updatedUser };
+    localStorage.setItem('user', JSON.stringify(merged));
+    setUser(merged);
+  };
+
+  // ─── Outpass Actions ──────────────────────────────────────────────────────
+  const addOutpass = async (payload) => {
+    const newOutpass = await createOutpassApi(payload);
+    setOutpasses((prev) => [newOutpass, ...prev]);
+    return newOutpass._id;
+  };
+
+  const updateOutpassStatus = async (id, status) => {
+    const updated = await updateOutpassStatusApi(id, status);
+    setOutpasses((prev) => prev.map((o) => (o._id === id ? updated : o)));
+    return updated;
+  };
+
+  // ─── Log Actions ──────────────────────────────────────────────────────────
+  const addLog = async (outpass, type) => {
+    const log = await addLogApi(
+      outpass._id,
+      outpass.studentName,
+      outpass.studentId,
+      type
+    );
+    setLogs((prev) => [log, ...prev]);
+    return log;
   };
 
   return (
-    <AppContext.Provider value={{ user, login, logout, outpasses, addOutpass, updateOutpassStatus, logs, addLog }}>
+    <AppContext.Provider
+      value={{
+        user,
+        login,
+        googleLogin,
+        logout,
+        updateProfile,
+        outpasses,
+        addOutpass,
+        updateOutpassStatus,
+        logs,
+        addLog,
+        fetchOutpasses,
+        fetchLogs,
+        loadingOutpasses,
+        loadingLogs,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
@@ -90,38 +166,44 @@ function AppRoutes() {
 
   return (
     <Router>
-      <div className="app-layout">
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
         <Header user={user} onLogout={logout} />
-        <main className="container screen-enter">
+        <main className="flex-1">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
           <Routes>
             <Route path="/" element={!user ? <LoginScreen /> : <Navigate to={`/${user.role}`} />} />
-            
+
             {/* Student Routes */}
             <Route path="/student" element={<ProtectedRoute allowedRole="student"><StudentDashboard /></ProtectedRoute>} />
             <Route path="/student/apply" element={<ProtectedRoute allowedRole="student"><ApplyOutpass /></ProtectedRoute>} />
             <Route path="/student/status/:id" element={<ProtectedRoute allowedRole="student"><OutpassStatus /></ProtectedRoute>} />
-            
+
             {/* Warden Routes */}
             <Route path="/warden" element={<ProtectedRoute allowedRole="warden"><WardenDashboard /></ProtectedRoute>} />
             <Route path="/warden/request/:id" element={<ProtectedRoute allowedRole="warden"><WardenApproval /></ProtectedRoute>} />
-            
+
             {/* Security Routes */}
             <Route path="/security" element={<ProtectedRoute allowedRole="security"><SecurityScanner /></ProtectedRoute>} />
             <Route path="/security/logs" element={<ProtectedRoute allowedRole="security"><SecurityLog /></ProtectedRoute>} />
-            
+
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
+          </div>
         </main>
       </div>
     </Router>
   );
 }
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
 function App() {
   return (
-    <AppProvider>
-      <AppRoutes />
-    </AppProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AppProvider>
+        <AppRoutes />
+      </AppProvider>
+    </GoogleOAuthProvider>
   );
 }
 

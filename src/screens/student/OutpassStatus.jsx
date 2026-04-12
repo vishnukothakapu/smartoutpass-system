@@ -1,138 +1,146 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { useApp } from '../../App';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { ArrowLeft, Clock, Calendar, AlertTriangle, ShieldCheck } from 'lucide-react';
-import './OutpassStatus.css';
+import { getOutpass } from '../../api/outpasses';
+
+const fmt = d => new Intl.DateTimeFormat('en-US', { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(d));
 
 export const OutpassStatus = () => {
   const { id } = useParams();
-  const { outpasses } = useApp();
   const navigate = useNavigate();
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [outpass, setOutpass] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const [emergencyLoading, setEmergencyLoading] = useState(false);
 
-  const outpass = outpasses.find(o => o.id === id);
+  useEffect(() => {
+    getOutpass(id).then(setOutpass).catch(() => setOutpass(null)).finally(() => setLoading(false));
+  }, [id]);
 
-  if (!outpass) {
-    return <div className="text-center" style={{padding: 40}}>Outpass not found</div>;
-  }
+  if (loading) return <div className="flex justify-center items-center py-20"><svg className="animate-spin h-9 w-9 text-primary-400" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg></div>;
+  if (!outpass) return <div className="text-center py-20 text-slate-400">Outpass not found.</div>;
 
   const isApproved = outpass.status === 'approved' || outpass.status === 'active';
-  const isPending = outpass.status === 'pending';
+  const isPending  = outpass.status === 'pending';
   const isRejected = outpass.status === 'rejected';
 
-  const formatDate = (dateStr) => {
-    return new Intl.DateTimeFormat('en-US', { 
-      weekday: 'short', month: 'short', day: 'numeric', 
-      hour: '2-digit', minute: '2-digit' 
-    }).format(new Date(dateStr));
+  const statusBadge = () => {
+    if (outpass.status === 'approved')  return <Badge variant="success">Approved</Badge>;
+    if (outpass.status === 'active')    return <Badge variant="info">Out of Campus</Badge>;
+    if (isPending)                       return <Badge variant="warning">Pending Approval</Badge>;
+    if (isRejected)                      return <Badge variant="danger">Rejected</Badge>;
+    return <Badge variant="info">Completed</Badge>;
   };
 
-  const handleEmergency = () => {
-    setEmergencyLoading(true);
-    setTimeout(() => {
-      setEmergencyLoading(false);
-      setShowEmergencyModal(false);
-      alert("Emergency request dispatched to Warden & Security immediately. Please proceed to the gate.");
-    }, 1500);
-  };
-
-  const qrValue = JSON.stringify({
-    id: outpass.id,
-    student: outpass.studentId,
-    timestamp: new Date().toISOString()
-  });
+  const qrValue = JSON.stringify({ id: outpass._id, student: outpass.studentId, timestamp: new Date().toISOString() });
 
   return (
-    <div className="status-container">
-      <div className="header-row">
-        <button className="icon-btn" onClick={() => navigate(-1)} style={{marginLeft: -8}}>
-          <ArrowLeft size={24} />
+    <div className="space-y-4 animate-fade-slide-up max-w-lg mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <button onClick={() => navigate(-1)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+          <ArrowLeft size={22} />
         </button>
-        <span className="text-sm font-semibold text-muted">Request Tracker</span>
-        <div style={{width: 36}}></div>
+        <span className="text-sm font-semibold text-slate-400">Request Tracker</span>
+        <div className="w-9" />
       </div>
 
-      <div className="status-header">
-        <h1 className="text-h1">{outpass.id}</h1>
-        {outpass.status === 'approved' && <Badge variant="success">Approved</Badge>}
-        {outpass.status === 'active' && <Badge variant="info" style={{backgroundColor: 'var(--primary)', color: 'white'}}>Out of Campus</Badge>}
-        {isPending && <Badge variant="warning">Pending Approval</Badge>}
-        {isRejected && <Badge variant="danger">Rejected</Badge>}
-        {(outpass.status === 'completed') && <Badge variant="info">Completed</Badge>}
+      {/* Status header */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white font-mono">{outpass._id.slice(-8).toUpperCase()}</h1>
+        {statusBadge()}
       </div>
 
+      {/* QR Code */}
       {isApproved && (
-        <Card className="qr-card">
-          <div className="qr-wrapper">
-            <QRCodeSVG value={qrValue} size={200} level="H" includeMargin={true} />
+        <Card className="flex flex-col items-center py-6">
+          <div className="p-4 bg-white rounded-2xl shadow-inner">
+            <QRCodeSVG value={qrValue} size={180} level="H" includeMargin />
           </div>
-          <p className="text-muted text-center text-sm" style={{marginTop: 16}}>
+          <p className="text-slate-500 dark:text-slate-400 text-sm text-center mt-4">
             Show this QR code at the main gate scanner.
           </p>
-          <div className="scan-instruction">
-            <ShieldCheck size={16} color="var(--success)" />
-            <span className="text-xs font-medium" style={{color: 'var(--success)'}}>Ready to verify</span>
+          <div className="flex items-center gap-2 mt-2">
+            <ShieldCheck size={16} className="text-emerald-500" />
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Ready to verify</span>
           </div>
         </Card>
       )}
 
+      {/* Pending */}
       {isPending && (
-        <Card className="pending-card">
-          <Clock size={40} className="pulse-loading" style={{color: 'var(--warning)', marginBottom: 16}} />
-          <h3 className="text-h3" style={{marginBottom: 8}}>Warden Review Pending</h3>
-          <p className="text-muted text-sm text-center">
-            Your request is currently in queue. You will be notified once the warden reviews your request.
+        <Card className="flex flex-col items-center py-8">
+          <Clock size={44} className="text-amber-400 animate-pulse-beat mb-3" />
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Warden Review Pending</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm text-center max-w-xs">
+            Your request is in queue. You'll be notified once the warden reviews it.
           </p>
         </Card>
       )}
 
-      <Card className="details-card">
-        <h3 className="text-h3" style={{marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 12}}>Outpass Details</h3>
-        
-        <div className="detail-item">
-          <span className="text-xs text-muted">Reason</span>
-          <p className="font-medium">{outpass.reason}</p>
+      {/* Details */}
+      <Card className="space-y-4">
+        <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pb-3 border-b border-slate-100 dark:border-slate-700">
+          Outpass Details
+        </h3>
+        <div>
+          <p className="text-xs text-slate-400 mb-1">Reason</p>
+          <p className="font-semibold text-slate-800 dark:text-slate-200">{outpass.reason}</p>
         </div>
-        
-        <div className="detail-item">
-          <span className="text-xs text-muted">Leave Duration</span>
-          <div className="duration-pill">
-            <Calendar size={14} className="text-muted" />
-            <span className="text-sm font-medium">{formatDate(outpass.dateOut)}</span>
+        {outpass.destination && (
+          <div>
+            <p className="text-xs text-slate-400 mb-1">Destination</p>
+            <p className="font-semibold text-slate-800 dark:text-slate-200">{outpass.destination}</p>
           </div>
-          <div className="vertical-line"></div>
-          <div className="duration-pill">
-            <Calendar size={14} className="text-muted" />
-            <span className="text-sm font-medium">{formatDate(outpass.dateIn)}</span>
+        )}
+        {outpass.items && (
+          <div>
+            <p className="text-xs text-slate-400 mb-1">Items Taken Out</p>
+            <p className="font-semibold text-slate-800 dark:text-slate-200">{outpass.items}</p>
+          </div>
+        )}
+        <div>
+          <p className="text-xs text-slate-400 mb-2">Duration</p>
+          <div className="flex flex-col gap-2">
+            {[['Departure', outpass.dateOut], ['Return', outpass.dateIn]].map(([label, date]) => (
+              <div key={label} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl px-4 py-3">
+                <Calendar size={15} className="text-slate-400 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] text-slate-400">{label}</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{fmt(date)}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </Card>
 
+      {/* Emergency */}
       {isPending && (
-        <div className="emergency-section">
-          <Button variant="ghost" className="emergency-btn" onClick={() => setShowEmergencyModal(true)}>
-            <AlertTriangle size={18} />
-             Declare Emergency Fast-Track
-          </Button>
-        </div>
+        <Button variant="ghost" fullWidth onClick={() => setShowModal(true)}
+          className="text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl h-11">
+          <AlertTriangle size={16} /> Declare Emergency Fast-Track
+        </Button>
       )}
 
-      {/* Basic Modal for Emergency */}
-      {showEmergencyModal && (
-        <div className="modal-overlay">
-          <Card className="modal-content">
-            <h3 className="text-h2" style={{color: 'var(--danger)', marginBottom: 8}}>Emergency Request?</h3>
-            <p className="text-body text-muted" style={{marginBottom: 24}}>
-              This will bypass standard queues and immediately alert the Warden and Security on duty. Only use this for genuine emergencies.
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <Card className="w-full max-w-sm">
+            <h3 className="text-xl font-bold text-red-500 mb-2">Emergency Request?</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-5">
+              This will immediately alert the Warden and Security. Only use for genuine emergencies.
             </p>
-            <div style={{display: 'flex', gap: 12}}>
-              <Button variant="secondary" fullWidth onClick={() => setShowEmergencyModal(false)}>Cancel</Button>
-              <Button variant="danger" fullWidth onClick={handleEmergency} isLoading={emergencyLoading}>Confirm</Button>
+            <div className="flex gap-3">
+              <Button variant="secondary" fullWidth onClick={() => setShowModal(false)}>Cancel</Button>
+              <Button variant="danger" fullWidth isLoading={emergencyLoading}
+                onClick={() => { setEmergencyLoading(true); setTimeout(() => { setEmergencyLoading(false); setShowModal(false); alert('Emergency dispatched!'); }, 1500); }}>
+                Confirm
+              </Button>
             </div>
           </Card>
         </div>

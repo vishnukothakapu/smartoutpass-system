@@ -5,190 +5,154 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { ScanFace, CheckCircle, XCircle, LogIn, LogOut, FileText } from 'lucide-react';
 import { Scanner } from '@yudiel/react-qr-scanner';
-import './SecurityScanner.css';
+import { getOutpass } from '../../api/outpasses';
 
 export const SecurityScanner = () => {
-  const { user, outpasses, updateOutpassStatus, addLog, logs } = useApp();
+  const { user, outpasses, updateOutpassStatus, addLog, logs, fetchOutpasses } = useApp();
   const navigate = useNavigate();
-  const [scanning, setScanning] = useState(false);
   const [liveScanning, setLiveScanning] = useState(false);
-  const [scannedResult, setScannedResult] = useState(null); // success, error, or null
+  const [scannedResult, setScannedResult] = useState(null);
   const [scannedOutpass, setScannedOutpass] = useState(null);
-  
+  const [processing, setProcessing] = useState(false);
+
   if (!user || user.role !== 'security') return null;
 
-  const simulateScan = () => {
-    setScanning(true);
-    setScannedResult(null);
-
-    setTimeout(() => {
-      setScanning(false);
-      // Mock scanning logic: grab the first approved or active outpass for demo
-      const validOutpass = outpasses.find(o => o.status === 'approved' || o.status === 'active');
-      
-      if (validOutpass) {
-        setScannedOutpass(validOutpass);
-        setScannedResult('success');
-      } else {
-        setScannedResult('error');
-      }
-    }, 2000);
-  };
-
-  const handleActualScan = (text) => {
+  const handleActualScan = async (text) => {
     try {
       const data = JSON.parse(text);
-      const outpassId = data.id;
-      const validOutpass = outpasses.find(o => o.id === outpassId);
-      
-      if (validOutpass && (validOutpass.status === 'approved' || validOutpass.status === 'active')) {
-        setScannedOutpass(validOutpass);
-        setScannedResult('success');
-        setLiveScanning(false);
-      } else {
-        setScannedResult('error');
-        setLiveScanning(false);
-      }
-    } catch (err) {
-      setScannedResult('error');
+      const outpassData = await getOutpass(data.id);
+      if (outpassData && (outpassData.status === 'approved' || outpassData.status === 'active')) {
+        setScannedOutpass(outpassData); setScannedResult('success');
+      } else { setScannedResult('error'); }
       setLiveScanning(false);
-    }
+    } catch { setScannedResult('error'); setLiveScanning(false); }
   };
 
-  const processGateAction = (type) => {
-    // If exit, ensure it was 'approved'
-    if (type === 'exit') {
-      if (scannedOutpass.status !== 'approved') return alert('Failed: Student has already exited or pass is invalid for exit.');
-      updateOutpassStatus(scannedOutpass.id, 'active');
-    }
-    
-    // If entry, ensure it was 'active'
-    if (type === 'entry') {
-      if (scannedOutpass.status !== 'active') return alert('Failed: Student is not currently marked as outside the campus.');
-      updateOutpassStatus(scannedOutpass.id, 'completed');
-    }
-    
-    addLog(scannedOutpass, type);
-    
-    // Reset scanner
-    setScannedResult(null);
-    setScannedOutpass(null);
-    alert(`Student ${type} recorded successfully!`);
+  const processGateAction = async (type) => {
+    if (type === 'exit' && scannedOutpass.status !== 'approved') { alert('Student already exited.'); return; }
+    if (type === 'entry' && scannedOutpass.status !== 'active') { alert('Student not currently outside.'); return; }
+    setProcessing(true);
+    try {
+      await updateOutpassStatus(scannedOutpass._id, type === 'exit' ? 'active' : 'completed');
+      await addLog(scannedOutpass, type);
+      await fetchOutpasses();
+      setScannedResult(null); setScannedOutpass(null);
+      alert(`Student ${type} recorded!`);
+    } catch (err) { alert(err?.response?.data?.message || 'Gate action failed.'); }
+    finally { setProcessing(false); }
   };
 
-  const studentsOut = outpasses.filter(o => o.status === 'active').length;
+  const studentsOut   = outpasses.filter(o => o.status === 'active').length;
   const returnedToday = logs.filter(l => l.type === 'entry').length;
 
   return (
-    <div className="security-scanner">
-      <div className="scanner-header text-center">
-        <h1 className="text-h2">Gate Security</h1>
-        <p className="text-muted text-sm">{user.gate} Scanner • Active</p>
+    <div className="space-y-5 animate-fade-slide-up max-w-lg mx-auto">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white">Gate Security</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{user.gate} · Scanner Active</p>
       </div>
 
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}>
-        <Card style={{padding: '12px', textAlign: 'center'}}>
-          <p className="text-xs text-muted">Students Outside</p>
-          <h2 className="text-h2" style={{color: 'var(--warning)'}}>{studentsOut}</h2>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="text-center py-4">
+          <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Students Outside</p>
+          <p className="text-3xl font-extrabold text-amber-500">{studentsOut}</p>
         </Card>
-        <Card style={{padding: '12px', textAlign: 'center'}}>
-          <p className="text-xs text-muted">Entries Logged (Today)</p>
-          <h2 className="text-h2" style={{color: 'var(--success)'}}>{returnedToday}</h2>
+        <Card className="text-center py-4">
+          <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Entries Today</p>
+          <p className="text-3xl font-extrabold text-emerald-500">{returnedToday}</p>
         </Card>
       </div>
 
-      <div style={{display: 'flex', gap: 12, marginBottom: 24}}>
-        <Button variant="secondary" fullWidth onClick={() => navigate('/security/logs')}>
-          <FileText size={18} /> View Complete Log
-        </Button>
-      </div>
+      {/* Log link */}
+      <Button variant="secondary" fullWidth onClick={() => navigate('/security/logs')}>
+        <FileText size={18} /> View Complete Log
+      </Button>
 
+      {/* Scanner area */}
       {!scannedResult ? (
-        <Card className="scanner-card">
+        <Card className="flex flex-col items-center py-8 gap-6">
           {liveScanning ? (
-            <div style={{ width: '100%', borderRadius: 12, overflow: 'hidden', marginBottom: 24, alignSelf: 'center' }}>
+            <div className="w-full max-w-xs rounded-2xl overflow-hidden shadow-lg">
               <Scanner
-                onScan={(result) => {
-                  if (result && result.length > 0) {
-                    handleActualScan(result[0].rawValue);
-                  }
-                }}
-                onError={(error) => console.log(error?.message)}
+                onScan={result => { if (result?.length) handleActualScan(result[0].rawValue); }}
+                onError={console.error}
               />
             </div>
           ) : (
-            <>
-              <div className={`camera-frame ${scanning ? 'scanning-animation' : ''}`}>
-                 <ScanFace size={64} className="camera-icon" />
-                 {scanning && <div className="scan-line"></div>}
-              </div>
-              
-              <h3 className="text-h3 text-center" style={{marginTop: 24, marginBottom: 8}}>
-                {scanning ? 'Scanning...' : 'Ready to Scan'}
-              </h3>
-              <p className="text-muted text-sm text-center" style={{marginBottom: 32}}>
-                Tap 'Scan the Outpass' to scan a live student QR pass.
-              </p>
-            </>
+            <div className="relative flex items-center justify-center w-36 h-36 bg-slate-100 dark:bg-slate-800 rounded-3xl">
+              <ScanFace size={64} className="text-slate-400 dark:text-slate-500" />
+              <div className="absolute inset-0 scan-line-bar rounded-3xl" />
+            </div>
           )}
 
-          <div style={{display: 'flex', gap: 12, width: '100%'}}>
-            {!liveScanning ? (
-              <Button fullWidth size="lg" onClick={() => setLiveScanning(true)}>
-                Scan the Outpass
-              </Button>
-            ) : (
-              <Button fullWidth size="lg" variant="secondary" onClick={() => setLiveScanning(false)}>
-                Cancel Camera
-              </Button>
-            )}
+          <div className="text-center">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">
+              {liveScanning ? 'Point camera at QR code' : 'Ready to Scan'}
+            </h3>
+            {!liveScanning && <p className="text-sm text-slate-500 dark:text-slate-400">Tap below to activate the camera.</p>}
           </div>
+
+          <Button fullWidth size="lg" variant={liveScanning ? 'secondary' : 'primary'}
+            onClick={() => setLiveScanning(!liveScanning)}>
+            {liveScanning ? 'Cancel Camera' : 'Scan the Outpass'}
+          </Button>
         </Card>
       ) : scannedResult === 'error' ? (
-        <Card className="scanner-card error-card">
-          <XCircle size={64} color="var(--danger)" style={{marginBottom: 16}} />
-          <h2 className="text-h2 text-center" style={{color: 'var(--danger)', marginBottom: 8}}>Invalid Pass</h2>
-          <p className="text-center text-muted" style={{marginBottom: 24}}>This QR code is not recognized or not approved.</p>
+        <Card className="flex flex-col items-center py-10 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800">
+          <XCircle size={60} className="text-red-500 mb-4" />
+          <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Invalid Pass</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-5">QR not recognized or pass not approved.</p>
           <Button variant="secondary" fullWidth onClick={() => setScannedResult(null)}>Try Again</Button>
         </Card>
       ) : (
-        <Card className="scanner-card success-card">
-          <CheckCircle size={48} color="var(--success)" style={{marginBottom: 16}} />
-          <h2 className="text-h2 text-center" style={{color: 'var(--success)', marginBottom: 4}}>Access Verified</h2>
-          <p className="font-semibold text-center text-body" style={{marginBottom: 24}}>{scannedOutpass.id}</p>
-          
-          <div className="scanned-student-info">
-            <div className="avatar" style={{width: 48, height: 48}}>{scannedOutpass.studentName.charAt(0)}</div>
+        <Card className="flex flex-col items-center py-8">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
+            <CheckCircle size={40} className="text-emerald-500" />
+          </div>
+          <h2 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">Access Verified</h2>
+          <p className="text-xs font-mono text-slate-400 mb-5">{scannedOutpass._id.slice(-8).toUpperCase()}</p>
+
+          <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 w-full mb-6">
+            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 font-bold flex items-center justify-center text-lg flex-shrink-0">
+              {scannedOutpass.studentName.charAt(0)}
+            </div>
             <div>
-              <p className="font-medium">{scannedOutpass.studentName}</p>
-              <p className="text-xs text-muted">{scannedOutpass.studentProgram} {scannedOutpass.studentBatch} • Request reason: {scannedOutpass.reason}</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200">{scannedOutpass.studentName}</p>
+              <p className="text-xs text-slate-400 font-mono tracking-wide">{scannedOutpass.studentRollNo || `${scannedOutpass.studentProgram} ${scannedOutpass.studentBatch}`} · {scannedOutpass.reason}</p>
             </div>
           </div>
 
-          <div style={{display: 'flex', gap: 12, width: '100%', marginTop: 24}}>
-            <Button variant="secondary" fullWidth style={{borderColor: 'var(--primary)', color: 'var(--primary)'}} onClick={() => processGateAction('exit')}>
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <Button variant="secondary" size="lg" className="border-primary-300 dark:border-primary-700 text-primary-600 dark:text-primary-400"
+              onClick={() => processGateAction('exit')} isLoading={processing}>
               <LogOut size={18} /> Exit
             </Button>
-            <Button variant="primary" style={{backgroundColor: 'var(--success)'}} fullWidth onClick={() => processGateAction('entry')}>
+            <Button size="lg" className="bg-emerald-500 hover:bg-emerald-600 text-white"
+              onClick={() => processGateAction('entry')} isLoading={processing}>
               <LogIn size={18} /> Entry
             </Button>
           </div>
         </Card>
       )}
 
+      {/* Recent activity */}
       {logs.length > 0 && !scannedResult && (
-        <Card style={{marginTop: '16px', padding: '16px'}}>
-          <h3 className="text-sm font-semibold" style={{marginBottom: '12px'}}>Recent Activity</h3>
-          <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+        <Card>
+          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Recent Activity</h3>
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {logs.slice(0, 3).map((log, i) => (
-              <div key={i} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem', paddingBottom: '8px', borderBottom: i < 2 ? '1px solid var(--border)' : 'none'}}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                  <span style={{color: log.type === 'entry' ? 'var(--success)' : 'var(--warning)', fontWeight: 600}}>
+              <div key={log._id || i} className="flex items-center justify-between py-2.5 text-sm">
+                <div className="flex items-center gap-2.5">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${log.type === 'entry' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'}`}>
                     {log.type === 'entry' ? 'IN' : 'OUT'}
                   </span>
-                  <span>{log.studentName}</span>
+                  <span className="text-slate-700 dark:text-slate-300">{log.studentName}</span>
                 </div>
-                <span className="text-xs text-muted">Just now</span>
+                <span className="text-xs text-slate-400">
+                  {new Intl.DateTimeFormat('en-US', { hour:'2-digit', minute:'2-digit' }).format(new Date(log.timestamp))}
+                </span>
               </div>
             ))}
           </div>
