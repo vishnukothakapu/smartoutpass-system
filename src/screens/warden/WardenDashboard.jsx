@@ -107,7 +107,7 @@ export const WardenDashboard = () => {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <h3 className="font-bold text-slate-800 dark:text-slate-200">{req.studentName}</h3>
-                  <p className="text-xs text-slate-400 font-mono tracking-wide">{req._id.slice(-8).toUpperCase()} · {req.studentRollNo || `${req.studentProgram} ${req.studentBatch}`}</p>
+                  <p className="text-xs text-slate-400 font-mono tracking-wide">{req.outpassId} · {req.studentRollNo || `${req.studentProgram} ${req.studentBatch}`}</p>
                 </div>
                 {statusBadge(req.status)}
               </div>

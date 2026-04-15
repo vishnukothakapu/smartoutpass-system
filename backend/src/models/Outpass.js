@@ -1,7 +1,13 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const outpassSchema = new mongoose.Schema(
   {
+    outpassId: { 
+      type: String, 
+      unique: true, 
+      default: () => crypto.randomBytes(4).toString('hex').toUpperCase() 
+    },
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     studentName: { type: String, required: true },
     studentProgram: { type: String },

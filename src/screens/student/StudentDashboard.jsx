@@ -108,7 +108,7 @@ export const StudentDashboard = () => {
             {outpasses.map(op => (
               <Card key={op._id} hoverable onClick={() => navigate(`/student/status/${op._id}`)}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono font-semibold text-slate-400">{op._id.slice(-8).toUpperCase()}</span>
+                  <span className="text-xs font-mono font-semibold text-slate-400">{op.outpassId}</span>
                   {statusBadge(op.status)}
                 </div>
                 <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm mb-3 line-clamp-2">{op.reason}</p>

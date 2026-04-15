@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const gateLogSchema = new mongoose.Schema(
   {
     outpassId: { type: mongoose.Schema.Types.ObjectId, ref: 'Outpass', required: true },
+    outpassIdStr: { type: String, default: '' },
     studentName: { type: String, required: true },
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     studentRollNo: { type: String, default: '' },

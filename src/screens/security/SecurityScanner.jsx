@@ -212,7 +212,7 @@ export const SecurityScanner = () => {
             <CheckCircle size={36} className="text-emerald-500" />
           </div>
           <h2 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">Access Verified</h2>
-          <p className="text-xs font-mono text-slate-400 mb-5">{scannedOutpass._id.slice(-8).toUpperCase()}</p>
+          <p className="text-xs font-mono text-slate-400 mb-5">{scannedOutpass.outpassId}</p>
 
           {/* Student detail card */}
           <div className="w-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl divide-y divide-slate-100 dark:divide-slate-700 mb-6 overflow-hidden">

@@ -56,7 +56,7 @@ const LogCard = ({ log }) => {
           </div>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
             {log.studentRollNo ? `${log.studentRollNo} · ` : ''}
-            ID: {log.outpassId?.toString().slice(-8).toUpperCase()}
+            ID: {log.outpassIdStr || log.outpassId?.toString().slice(-8).toUpperCase()}
           </p>
         </div>
 
@@ -79,7 +79,7 @@ const LogCard = ({ log }) => {
             <div>
               <p className="text-[10px] text-slate-400 uppercase tracking-wide">Outpass ID</p>
               <p className="font-mono font-medium text-slate-700 dark:text-slate-300">
-                {log.outpassId?.toString()}
+                {log.outpassIdStr || log.outpassId?.toString()}
               </p>
             </div>
           </div>

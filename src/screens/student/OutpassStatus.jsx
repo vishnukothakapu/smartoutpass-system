@@ -18,7 +18,10 @@ export const OutpassStatus = () => {
   const [emergencyLoading, setEmergencyLoading] = useState(false);
 
   useEffect(() => {
-    getOutpass(id).then(setOutpass).catch(() => setOutpass(null)).finally(() => setLoading(false));
+    const fetchIt = () => getOutpass(id).then(setOutpass).catch(() => setOutpass(null)).finally(() => setLoading(false));
+    fetchIt();
+    const interval = setInterval(fetchIt, 3000);
+    return () => clearInterval(interval);
   }, [id]);
 
   if (loading) return <div className="flex justify-center items-center py-20"><svg className="animate-spin h-9 w-9 text-primary-400" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg></div>;
@@ -51,7 +54,7 @@ export const OutpassStatus = () => {
 
       {/* Status header */}
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white font-mono">{outpass._id.slice(-8).toUpperCase()}</h1>
+        <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white font-mono">{outpass.outpassId}</h1>
         {statusBadge()}
       </div>
 

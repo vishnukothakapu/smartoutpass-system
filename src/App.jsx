@@ -71,11 +71,11 @@ export const AppProvider = ({ children }) => {
     fetchOutpasses();
     fetchLogs();
 
-    // Auto-refresh data silently every 10 seconds
+    // Auto-refresh data silently every 3 seconds
     const interval = setInterval(() => {
       fetchOutpasses(true);
       fetchLogs(true);
-    }, 10000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [fetchOutpasses, fetchLogs]);
@@ -129,6 +129,7 @@ export const AppProvider = ({ children }) => {
   const addLog = async (outpass, type) => {
     const extras = {
       studentRollNo: outpass.studentRollNo || '',
+      outpassIdStr: outpass.outpassId || '',
       reason: outpass.reason || '',
       hostel: outpass.hostel || '',
       room: outpass.wing ? `${outpass.wing}${outpass.room ? ' / Room ' + outpass.room : ''}` : (outpass.room || ''),

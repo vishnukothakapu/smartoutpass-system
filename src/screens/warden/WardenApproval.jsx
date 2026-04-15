@@ -18,7 +18,10 @@ export const WardenApproval = () => {
   const [error, setError]   = useState('');
 
   useEffect(() => {
-    getOutpass(id).then(setReq).catch(() => setReq(null)).finally(() => setLoading(false));
+    const fetchIt = () => getOutpass(id).then(setReq).catch(() => setReq(null)).finally(() => setLoading(false));
+    fetchIt();
+    const interval = setInterval(fetchIt, 3000);
+    return () => clearInterval(interval);
   }, [id]);
 
   const handleAction = async (status) => {
@@ -55,7 +58,7 @@ export const WardenApproval = () => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-800 dark:text-white">{req.studentName}</h2>
-            <p className="text-sm text-slate-400 font-mono tracking-wide">{req.studentRollNo || `${req.studentProgram} ${req.studentBatch}`} · {req._id.slice(-8).toUpperCase()}</p>
+            <p className="text-sm text-slate-400 font-mono tracking-wide">{req.studentRollNo || `${req.studentProgram} ${req.studentBatch}`} · {req.outpassId}</p>
           </div>
         </div>
 
