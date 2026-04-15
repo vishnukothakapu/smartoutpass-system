@@ -127,11 +127,19 @@ export const AppProvider = ({ children }) => {
 
   // ─── Log Actions ──────────────────────────────────────────────────────────
   const addLog = async (outpass, type) => {
+    const extras = {
+      studentRollNo: outpass.studentRollNo || '',
+      reason: outpass.reason || '',
+      hostel: outpass.hostel || '',
+      room: outpass.wing ? `${outpass.wing}${outpass.room ? ' / Room ' + outpass.room : ''}` : (outpass.room || ''),
+      mobile: outpass.mobile || '',
+    };
     const log = await addLogApi(
       outpass._id,
       outpass.studentName,
       outpass.studentId,
-      type
+      type,
+      extras
     );
     setLogs((prev) => [log, ...prev]);
     return log;

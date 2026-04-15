@@ -54,18 +54,24 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const outpass = await Outpass.findById(req.params.id);
+    const outpass = await Outpass.findById(req.params.id).populate('studentId', 'mobile room');
     if (!outpass) return res.status(404).json({ message: 'Outpass not found.' });
 
     // Students can only see their own outpasses
     if (
       req.user.role === 'student' &&
-      outpass.studentId.toString() !== req.user._id.toString()
+      outpass.studentId._id.toString() !== req.user._id.toString()
     ) {
       return res.status(403).json({ message: 'Access denied.' });
     }
 
-    res.json(outpass);
+    // Merge populated student fields into the response
+    const obj = outpass.toObject();
+    obj.mobile = outpass.studentId?.mobile || '';
+    obj.room   = outpass.studentId?.room   || '';
+    obj.studentId = outpass.studentId?._id || outpass.studentId;
+
+    res.json(obj);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch outpass.' });

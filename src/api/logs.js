@@ -7,7 +7,7 @@ export const getLogs = async () => {
 };
 
 /** Security: create a gate log entry */
-export const addLog = async (outpassId, studentName, studentId, type) => {
-  const { data } = await api.post('/logs', { outpassId, studentName, studentId, type });
+export const addLog = async (outpassId, studentName, studentId, type, extras = {}) => {
+  const { data } = await api.post('/logs', { outpassId, studentName, studentId, type, ...extras });
   return data;
 };

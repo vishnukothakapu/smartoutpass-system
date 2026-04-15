@@ -26,7 +26,7 @@ router.get('/', authorize('security', 'warden'), async (req, res) => {
  * Body: { outpassId, studentName, studentId, type: 'entry' | 'exit' }
  */
 router.post('/', authorize('security'), async (req, res) => {
-  const { outpassId, studentName, studentId, type } = req.body;
+  const { outpassId, studentName, studentId, studentRollNo, reason, hostel, room, mobile, type } = req.body;
 
   if (!outpassId || !type) {
     return res.status(400).json({ message: 'outpassId and type are required.' });
@@ -41,6 +41,11 @@ router.post('/', authorize('security'), async (req, res) => {
       outpassId,
       studentName,
       studentId,
+      studentRollNo: studentRollNo || '',
+      reason: reason || '',
+      hostel: hostel || '',
+      room: room || '',
+      mobile: mobile || '',
       type,
       loggedBy: req.user._id,
       timestamp: new Date(),
