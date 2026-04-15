@@ -57,7 +57,7 @@ export const Header = ({ user, onLogout }) => {
                 {/* Profile avatar */}
                 <button
                   onClick={() => setDrawerOpen(true)}
-                  className="h-9 w-9 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white font-bold text-sm flex items-center justify-center ring-2 ring-primary-200 dark:ring-primary-800 hover:ring-primary-400 transition-all hover:scale-105"
+                  className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold text-sm flex items-center justify-center ring-2 ring-primary-200 dark:ring-primary-800 hover:ring-primary-400 transition-all hover:scale-105"
                   title="View profile"
                 >
                   {user.name?.charAt(0) || '?'}

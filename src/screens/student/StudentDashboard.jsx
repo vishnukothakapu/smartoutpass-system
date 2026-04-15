@@ -37,7 +37,7 @@ export const StudentDashboard = () => {
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-mono tracking-wide">{user?.rollNo || `${user?.program} · ${user?.batch}`}</p>
         </div>
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white font-bold text-lg flex items-center justify-center shadow-md">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold text-lg flex items-center justify-center shadow-md">
           {user?.name?.charAt(0)}
         </div>
       </div>
@@ -57,7 +57,7 @@ export const StudentDashboard = () => {
       </div>
 
       {/* Apply Banner */}
-      <Card className="bg-gradient-to-br from-primary-600 to-primary-800 border-0 text-white p-0 overflow-hidden">
+      <Card className="bg-gradient-to-br from-blue-600 to-blue-800 border-0 text-white p-0 overflow-hidden">
         <div className="p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">

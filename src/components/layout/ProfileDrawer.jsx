@@ -82,7 +82,7 @@ export const ProfileDrawer = ({ user, onClose, onUpdate }) => {
       <aside className="fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl z-[101] flex flex-col animate-slide-in-right overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center gap-4 px-5 py-5 bg-gradient-to-br from-primary-600 to-primary-800 flex-shrink-0">
+        <div className="flex items-center gap-4 px-5 py-5 bg-gradient-to-br from-blue-600 to-blue-800 flex-shrink-0">
           <div className="w-14 h-14 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center text-2xl font-bold text-white flex-shrink-0">
             {user?.name?.charAt(0) || '?'}
           </div>
