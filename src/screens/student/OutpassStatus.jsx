@@ -39,7 +39,11 @@ export const OutpassStatus = () => {
     return <Badge variant="info">Completed</Badge>;
   };
 
-  const qrValue = JSON.stringify({ id: outpass._id, student: outpass.studentId, timestamp: new Date().toISOString() });
+  const qrValue = JSON.stringify({ 
+    id: outpass._id, 
+    student: outpass.studentId, 
+    timestamp: outpass.createdAt || new Date(outpass.dateOut).toISOString() 
+  });
 
   return (
     <div className="space-y-4 animate-fade-slide-up max-w-lg mx-auto">
@@ -109,11 +113,16 @@ export const OutpassStatus = () => {
         <div>
           <p className="text-xs text-slate-400 mb-2">Duration</p>
           <div className="flex flex-col gap-2">
-            {[['Departure', outpass.dateOut], ['Return', outpass.dateIn]].map(([label, date]) => (
-              <div key={label} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl px-4 py-3">
-                <Calendar size={15} className="text-slate-400 flex-shrink-0" />
+            {[
+              ['Scheduled Departure', outpass.dateOut],
+              outpass.actualExitAt ? ['Actual Departure', outpass.actualExitAt] : null,
+              ['Scheduled Return', outpass.dateIn],
+              outpass.actualEntryAt ? ['Actual Return', outpass.actualEntryAt] : null,
+            ].filter(Boolean).map(([label, date]) => (
+              <div key={label} className={`flex items-center gap-3 rounded-xl px-4 py-3 ${label.includes('Actual') ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800' : 'bg-slate-50 dark:bg-slate-800/60'}`}>
+                <Calendar size={15} className={label.includes('Actual') ? 'text-emerald-500' : 'text-slate-400'} />
                 <div>
-                  <p className="text-[10px] text-slate-400">{label}</p>
+                  <p className={`text-[10px] ${label.includes('Actual') ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-400'}`}>{label}</p>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{fmt(date)}</p>
                 </div>
               </div>

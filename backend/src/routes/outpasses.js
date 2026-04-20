@@ -163,6 +163,13 @@ router.patch('/:id/status', authorize('warden', 'security'), async (req, res) =>
 
     outpass.status = status;
 
+    // Capture actual entry/exit times
+    if (status === 'active' && !outpass.actualExitAt) {
+      outpass.actualExitAt = new Date();
+    } else if (status === 'completed' && !outpass.actualEntryAt) {
+      outpass.actualEntryAt = new Date();
+    }
+
     // Generate QR when approved
     if (status === 'approved') {
       outpass.qrData = Buffer.from(

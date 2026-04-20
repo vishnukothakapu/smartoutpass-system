@@ -113,7 +113,9 @@ export const WardenDashboard = () => {
               </div>
               <p className="text-sm font-medium text-slate-600 dark:text-slate-400 line-clamp-2 my-2">{req.reason}</p>
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
-                <span className="text-xs text-slate-400">Out: {fmt(req.dateOut)}</span>
+                <span className="text-xs text-slate-400">
+                  {req.actualEntryAt ? `In: ${fmt(req.actualEntryAt)}` : req.actualExitAt ? `Out: ${fmt(req.actualExitAt)}` : `Scheduled: ${fmt(req.dateOut)}`}
+                </span>
                 <ChevronRight size={16} className="text-slate-300 dark:text-slate-600" />
               </div>
             </Card>

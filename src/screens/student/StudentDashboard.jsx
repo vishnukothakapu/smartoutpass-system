@@ -4,7 +4,7 @@ import { useApp } from '../../App';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { MapPin, Calendar, ArrowRight, Plus, ShieldAlert, FileText, AlertCircle } from 'lucide-react';
+import { MapPin, Calendar, ArrowRight, Plus, ShieldAlert, FileText, AlertCircle, LogIn, LogOut } from 'lucide-react';
 import { isProfileComplete } from '../../utils/profileUtils';
 
 const statusBadge = (status) => {
@@ -132,8 +132,21 @@ export const StudentDashboard = () => {
                 </div>
                 <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm mb-3 line-clamp-2">{op.reason}</p>
                 <div className="flex flex-col gap-1 text-xs text-slate-400">
-                  <div className="flex items-center gap-1.5"><Calendar size={12}/> Out: {fmt(op.dateOut)}</div>
-                  <div className="flex items-center gap-1.5"><Calendar size={12}/> In: {fmt(op.dateIn)}</div>
+                  {op.actualExitAt ? (
+                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
+                      <LogOut size={12}/> Out: {fmt(op.actualExitAt)}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5"><Calendar size={12}/> Out: {fmt(op.dateOut)}</div>
+                  )}
+                  
+                  {op.actualEntryAt ? (
+                    <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <LogIn size={12}/> In: {fmt(op.actualEntryAt)}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5"><Calendar size={12}/> In: {fmt(op.dateIn)}</div>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 text-xs text-primary-500 font-semibold mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
                   View Details <ArrowRight size={12}/>

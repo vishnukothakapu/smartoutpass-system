@@ -86,11 +86,16 @@ export const WardenApproval = () => {
           <div>
             <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Duration</p>
             <div className="space-y-2">
-              {[['Departure', req.dateOut], ['Return', req.dateIn]].map(([label, date]) => (
-                <div key={label} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl px-4 py-3">
-                  <Calendar size={15} className="text-slate-400 flex-shrink-0" />
+              {[
+                ['Scheduled Departure', req.dateOut],
+                req.actualExitAt ? ['Actual Departure', req.actualExitAt] : null,
+                ['Scheduled Return', req.dateIn],
+                req.actualEntryAt ? ['Actual Return', req.actualEntryAt] : null,
+              ].filter(Boolean).map(([label, date]) => (
+                <div key={label} className={`flex items-center gap-3 rounded-xl px-4 py-3 ${label.includes('Actual') ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800' : 'bg-slate-50 dark:bg-slate-800/60'}`}>
+                  <Calendar size={15} className={label.includes('Actual') ? 'text-emerald-500' : 'text-slate-400'} />
                   <div>
-                    <p className="text-[10px] text-slate-400">{label}</p>
+                    <p className={`text-[10px] ${label.includes('Actual') ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-400'}`}>{label}</p>
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{fmt(date)}</p>
                   </div>
                 </div>

@@ -27,6 +27,8 @@ const outpassSchema = new mongoose.Schema(
     },
     qrData: { type: String, default: null },
     appliedAt: { type: Date, default: Date.now },
+    actualExitAt: { type: Date },
+    actualEntryAt: { type: Date },
   },
   { timestamps: true }
 );

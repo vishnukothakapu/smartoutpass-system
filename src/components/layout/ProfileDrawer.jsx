@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Lock, User, Edit3, CheckCircle, Loader, GraduationCap, CalendarDays, School, Home, DoorOpen, Smartphone, Phone, Mail, Building2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { updateProfile } from '../../api/profile';
 
@@ -11,25 +12,25 @@ const LOCKED = [
 ];
 
 const EDITABLE = [
-  { key: 'hostel',       label: 'Hostel',          placeholder: 'Select Hostel',   Icon: Building2, type: 'select' },
   { key: 'wing',         label: 'Wing',            placeholder: 'Select Wing',     Icon: Home,      type: 'select' },
+  { key: 'hostel',       label: 'Hostel',          placeholder: 'Select Hostel',   Icon: Building2, type: 'select' },
   { key: 'room',         label: 'Room Number',     placeholder: 'e.g. 102',         Icon: DoorOpen },
   { key: 'mobile',       label: 'Mobile',          placeholder: '+91 9876543210',   Icon: Smartphone },
   { key: 'fatherName',   label: "Father's Name",   placeholder: 'e.g. Mr. Ramesh', Icon: User },
   { key: 'fatherMobile', label: "Father's Mobile", placeholder: '+91 9876543100',   Icon: Phone },
 ];
 
-const HOSTEL_MAP = {
-  'Aravali':   'BH-1',
-  'Shivalik':  'BH-3',
-  'Srisailam': 'IVH',
-  'Gangotri':  'GH',
-  'Satpura':   'BH-4',
-  'Nilgiri':   'BH-2',
+const WING_MAP = {
+  'BH-1': 'Aravali',
+  'BH-3': 'Shivalik',
+  'IVH':  'Srisailam',
+  'GH':   'Gangotri',
+  'BH-4': 'Satpura',
+  'BH-2': 'Nilgiri',
 };
 
-const HOSTELS = Object.keys(HOSTEL_MAP);
-const WINGS   = Object.values(HOSTEL_MAP);
+const HOSTELS = Object.values(WING_MAP);
+const WINGS   = Object.keys(WING_MAP);
 
 const ROLE_META = {
   student:  { Icon: GraduationCap, label: 'Student' },
@@ -38,6 +39,7 @@ const ROLE_META = {
 };
 
 export const ProfileDrawer = ({ user, onClose, onUpdate }) => {
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [saving,  setSaving]  = useState(false);
   const [success, setSuccess] = useState(false);
@@ -63,7 +65,11 @@ export const ProfileDrawer = ({ user, onClose, onUpdate }) => {
       const { user: updated } = await updateProfile(form);
       onUpdate(updated);
       setSuccess(true); setEditing(false);
-      setTimeout(() => setSuccess(false), 2500);
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+        navigate(`/${updated.role}`);
+      }, 1500);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to save changes.');
     } finally { setSaving(false); }
@@ -162,18 +168,19 @@ export const ProfileDrawer = ({ user, onClose, onUpdate }) => {
                       type === 'select' ? (
                         <select
                           value={form[key]}
+                          disabled={key === 'hostel'}
                           onChange={e => {
                             const val = e.target.value;
                             let newForm = { ...form, [key]: val };
                             
-                            // Auto-map wing if hostel is changed
-                            if (key === 'hostel' && HOSTEL_MAP[val]) {
-                              newForm.wing = HOSTEL_MAP[val];
+                            // Auto-map hostel if wing is changed
+                            if (key === 'wing' && WING_MAP[val]) {
+                              newForm.hostel = WING_MAP[val];
                             }
                             
                             setForm(newForm);
                           }}
-                          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                          className={`w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer ${key === 'hostel' ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-900' : ''}`}
                         >
                           <option value="" disabled>{placeholder}</option>
                           {(key === 'hostel' ? HOSTELS : WINGS).map(opt => (
