@@ -11,13 +11,25 @@ const LOCKED = [
 ];
 
 const EDITABLE = [
-  { key: 'hostel',       label: 'Hostel',          placeholder: 'e.g. Satpura',    Icon: Building2 },
-  { key: 'wing',         label: 'Wing',            placeholder: 'e.g. BH-4',       Icon: Home },
+  { key: 'hostel',       label: 'Hostel',          placeholder: 'Select Hostel',   Icon: Building2, type: 'select' },
+  { key: 'wing',         label: 'Wing',            placeholder: 'Select Wing',     Icon: Home,      type: 'select' },
   { key: 'room',         label: 'Room Number',     placeholder: 'e.g. 102',         Icon: DoorOpen },
   { key: 'mobile',       label: 'Mobile',          placeholder: '+91 9876543210',   Icon: Smartphone },
   { key: 'fatherName',   label: "Father's Name",   placeholder: 'e.g. Mr. Ramesh', Icon: User },
   { key: 'fatherMobile', label: "Father's Mobile", placeholder: '+91 9876543100',   Icon: Phone },
 ];
+
+const HOSTEL_MAP = {
+  'Aravali':   'BH-1',
+  'Shivalik':  'BH-3',
+  'Srisailam': 'IVH',
+  'Gangotri':  'GH',
+  'Satpura':   'BH-4',
+  'Nilgiri':   'BH-2',
+};
+
+const HOSTELS = Object.keys(HOSTEL_MAP);
+const WINGS   = Object.values(HOSTEL_MAP);
 
 const ROLE_META = {
   student:  { Icon: GraduationCap, label: 'Student' },
@@ -140,19 +152,42 @@ export const ProfileDrawer = ({ user, onClose, onUpdate }) => {
               </div>
 
               <div className="flex flex-col gap-4">
-                {EDITABLE.map(({ key, label, placeholder, Icon }) => (
+                {EDITABLE.map(({ key, label, placeholder, Icon, type }) => (
                   <div key={key}>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                       <Icon size={12} className="text-slate-400" />
                       {label}
                     </label>
                     {editing ? (
-                      <input
-                        value={form[key]}
-                        placeholder={placeholder}
-                        onChange={e => setForm({ ...form, [key]: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                      />
+                      type === 'select' ? (
+                        <select
+                          value={form[key]}
+                          onChange={e => {
+                            const val = e.target.value;
+                            let newForm = { ...form, [key]: val };
+                            
+                            // Auto-map wing if hostel is changed
+                            if (key === 'hostel' && HOSTEL_MAP[val]) {
+                              newForm.wing = HOSTEL_MAP[val];
+                            }
+                            
+                            setForm(newForm);
+                          }}
+                          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                        >
+                          <option value="" disabled>{placeholder}</option>
+                          {(key === 'hostel' ? HOSTELS : WINGS).map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          value={form[key]}
+                          placeholder={placeholder}
+                          onChange={e => setForm({ ...form, [key]: e.target.value })}
+                          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                        />
+                      )
                     ) : (
                       <p className="text-sm font-medium text-slate-800 dark:text-slate-200 py-1">
                         {user?.[key] || <span className="text-slate-400 italic">Not set</span>}

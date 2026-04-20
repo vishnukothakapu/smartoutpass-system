@@ -4,7 +4,8 @@ import { useApp } from '../../App';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { MapPin, Calendar, ArrowRight, Plus, ShieldAlert, FileText } from 'lucide-react';
+import { MapPin, Calendar, ArrowRight, Plus, ShieldAlert, FileText, AlertCircle } from 'lucide-react';
+import { isProfileComplete } from '../../utils/profileUtils';
 
 const statusBadge = (status) => {
   switch (status) {
@@ -21,6 +22,7 @@ const fmt = d => new Intl.DateTimeFormat('en-US', { month:'short', day:'numeric'
 export const StudentDashboard = () => {
   const { user, outpasses, loadingOutpasses } = useApp();
   const navigate = useNavigate();
+  const profileComplete = isProfileComplete(user);
 
   const approved  = outpasses.filter(o => o.status === 'approved').length;
   const pending   = outpasses.filter(o => o.status === 'pending').length;
@@ -28,6 +30,22 @@ export const StudentDashboard = () => {
 
   return (
     <div className="space-y-5 animate-fade-slide-up">
+      
+      {/* Profile Verification Notice */}
+      {!profileComplete && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center flex-shrink-0">
+            <AlertCircle className="text-amber-600 dark:text-amber-400" size={20} />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-200">Complete Your Profile</h4>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
+              You must fill in your hostel details and contact info before you can apply for an outpass. 
+              Click your <strong>profile icon</strong> in the top right to update your details.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Welcome */}
       <div className="flex items-center justify-between">
@@ -72,9 +90,10 @@ export const StudentDashboard = () => {
             variant="secondary"
             fullWidth
             onClick={() => navigate('/student/apply')}
-            className="bg-white text-primary-700 hover:bg-primary-50 border-0 font-bold"
+            disabled={!profileComplete}
+            className={`font-bold ${!profileComplete ? 'opacity-70 grayscale-[0.5]' : 'bg-white text-primary-700 hover:bg-primary-50 border-0'}`}
           >
-            <Plus size={18} /> New Request
+            {profileComplete ? <><Plus size={18} /> New Request</> : 'Profile Incomplete'}
           </Button>
         </div>
       </Card>

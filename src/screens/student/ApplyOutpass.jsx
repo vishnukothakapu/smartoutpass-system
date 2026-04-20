@@ -4,7 +4,8 @@ import { useApp } from '../../App';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { isProfileComplete } from '../../utils/profileUtils';
 
 export const ApplyOutpass = () => {
   const { user, addOutpass, outpasses } = useApp();
@@ -13,6 +14,7 @@ export const ApplyOutpass = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   
+  const profileComplete = isProfileComplete(user);
   const hasActiveOutpass = outpasses.some(o => ['pending', 'approved', 'active'].includes(o.status));
   const minDateTime = new Date().toISOString().slice(0, 16);
   const [formData, setFormData] = useState({ reasonStr: '', destination: '', items: '', dateOut: '', dateIn: '' });
@@ -67,6 +69,30 @@ export const ApplyOutpass = () => {
       <Button onClick={() => navigate(-1)} variant="secondary" className="mt-4">
         Go Back
       </Button>
+    </div>
+  );
+  
+  if (!profileComplete) return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center gap-4 animate-fade-slide-up px-4">
+      <div className="w-20 h-20 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+        <AlertTriangle size={44} className="text-amber-500" />
+      </div>
+      <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white text-center">Profile Incomplete</h2>
+      <p className="text-slate-500 dark:text-slate-400 text-center text-sm max-w-sm">
+        You must fill in your hostel details and contact info before you can apply for an outpass. 
+        Please update your profile details first.
+      </p>
+      <div className="flex gap-3 mt-4">
+        <Button onClick={() => navigate(-1)} variant="secondary">
+          Go Back
+        </Button>
+        <button 
+          onClick={() => navigate('/student')} 
+          className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary-200 dark:shadow-none"
+        >
+          Update Profile
+        </button>
+      </div>
     </div>
   );
 

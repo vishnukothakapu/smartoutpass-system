@@ -93,6 +93,16 @@ router.post('/', authorize('student'), async (req, res) => {
     return res.status(400).json({ message: 'Return date must be after departure date.' });
   }
 
+  // Validate student profile completeness
+  const mandatoryFields = ['hostel', 'wing', 'room', 'mobile', 'fatherName', 'fatherMobile'];
+  const missingFields = mandatoryFields.filter(field => !req.user[field] || req.user[field].trim() === '');
+  
+  if (missingFields.length > 0) {
+    return res.status(400).json({ 
+      message: 'Please complete your profile details (Hostel, Wing, Room, Mobile, Father\'s Name, Father\'s Mobile) before applying for an outpass.' 
+    });
+  }
+
   try {
     const existingOutpass = await Outpass.findOne({
       studentId: req.user._id,
